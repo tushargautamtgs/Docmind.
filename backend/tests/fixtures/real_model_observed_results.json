@@ -1,0 +1,52 @@
+[
+  {
+    "request_id": "ad83095324e2416392baf5bf3f494de1",
+    "event": "raw_structured_extraction",
+    "raw": "{\"kind\": \"remaining_balance\", \"entitlement\": {\"value\": \"10\", \"source\": \"document\", \"chunk_id\": null, \"quote\": \"10 sick leave days per calendar year\", \"number_text\": \"10\", \"unit\": \"days\", \"period\": \"annual\"}, \"used\": {\"value\": \"3\", \"source\": \"question\", \"chunk_id\": null, \"quote\": \"I used 3 sick leaves this year\", \"number_text\": \"3\", \"unit\": \"days\", \"period\": \"annual\"}, \"missing_information\": \"No information provided about carried-forward sick leave days.\"}"
+  },
+  {
+    "request_id": "ad83095324e2416392baf5bf3f494de1",
+    "event": "parsed_extraction",
+    "parsed": {
+      "kind": "remaining_balance",
+      "entitlement": {
+        "value": "10",
+        "source": "document",
+        "chunk_id": null,
+        "quote": "10 sick leave days per calendar year",
+        "number_text": "10",
+        "unit": "days",
+        "period": "annual"
+      },
+      "used": {
+        "value": "3",
+        "source": "question",
+        "chunk_id": null,
+        "quote": "I used 3 sick leaves this year",
+        "number_text": "3",
+        "unit": "days",
+        "period": "annual"
+      },
+      "categories": [],
+      "missing_information": "No information provided about carried-forward sick leave days."
+    }
+  },
+  {
+    "request_id": null,
+    "event": "case_result",
+    "case_id": "sick_balance",
+    "answer": "10 \u2212 3 = 7 days\nAssumes no other usage in the stated period.\nSupporting evidence:\n\u201c10 sick leave days per calendar year\u201d [Page 1, Chunk 1]"
+  },
+  {
+    "request_id": null,
+    "event": "case_result",
+    "case_id": "carry_forward",
+    "answer": "No, you cannot carry forward all 8 unused annual leave days. The handbook specifies a maximum of **5 unused annual leave days** may be carried forward [Page 1, Chunk 1]. The remaining 3 days would need to be used by March 31. Sick leave cannot be carried forward [Page 1, Chunk 2]."
+  },
+  {
+    "request_id": null,
+    "event": "case_result",
+    "case_id": "stolen_laptop",
+    "answer": "The replacement timeline for a stolen device is not specified in the handbook. The finance team reviews complete claims within seven working days, but this is not a guaranteed payment date. No international travel reimbursement rates are specified."
+  }
+]

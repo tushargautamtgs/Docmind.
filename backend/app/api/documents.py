@@ -1,3 +1,12 @@
+import json
+import logging
+
+from anyio import CancelScope
+from fastapi.responses import StreamingResponse
+from starlette.concurrency import run_in_threadpool
+
+from app.services.streaming_service import stream_answer
+
 from pathlib import Path
 from uuid import uuid4
 from app.services.indexing_service import index_document
@@ -204,7 +213,7 @@ def ask_document(document_id: UUID, request: SearchRequest):
         ) from error
 
     except ValueError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        raise HTTPException(status_code=422, detail="Search could not be completed. Check the local server logs.") from error
 
     try:
         answer = generate_answer(request.question, matches)
@@ -253,3 +262,114 @@ def get_documents():
         "total_documents": len(documents),
         "documents": documents
     }
+    
+class AnswerStreamingResponse(StreamingResponse):
+    async def stream_response(self, send):
+        try:
+            await super().stream_response(send)
+        finally:
+            with CancelScope(shield=True):
+                await self.body_iterator.aclose()
+
+
+@router.post("/{document_id}/ask/stream")
+async def ask_document_stream(
+    document_id: UUID,
+    request: SearchRequest,
+):
+    try:
+        matches = await run_in_threadpool(
+            search_document,
+            document_id=document_id.hex,
+            question=request.question,
+            top_k=request.top_k,
+        )
+
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=404,
+            detail="Index not found. Index the document first.",
+        ) from error
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=422,
+            detail="Search could not be completed.",
+        ) from error
+
+    sources = [
+        {
+            "document_id": match["document_id"],
+            "chunk_id": match["chunk_id"],
+            "page": match["page"],
+            "score": float(match["score"]),
+            "text": match["text"],
+        }
+        for match in matches
+    ]
+
+    def encode(event):
+        return (
+            json.dumps(
+                event,
+                ensure_ascii=False,
+                allow_nan=False,
+            )
+            + "\n"
+        )
+
+    async def events():
+        answer_stream = stream_answer(request.question, matches)
+
+        try:
+            yield encode({
+                "type": "sources",
+                "retrieved_sources": sources,
+            })
+
+            async for text in answer_stream:
+                yield encode({
+                    "type": "delta",
+                    "text": text,
+                })
+
+            yield encode({"type": "done"})
+
+        except Exception as error:
+            logging.getLogger(__name__).exception(
+                "DocMind answer stream failed"
+            )
+
+            if isinstance(error, httpx.TimeoutException):
+                message = "Local model timed out. Try again."
+            elif isinstance(error, httpx.RequestError):
+                message = (
+                    "Cannot reach Ollama. Check that it is running."
+                )
+            elif isinstance(error, httpx.HTTPStatusError):
+                message = (
+                    "Ollama returned an error. Check its server logs."
+                )
+            else:
+                message = (
+                    "Answer stream failed or ended early. "
+                    "The answer may be incomplete."
+                )
+
+            yield encode({
+                "type": "error",
+                "message": message,
+            })
+
+        finally:
+            with CancelScope(shield=True):
+                await answer_stream.aclose()
+
+    return AnswerStreamingResponse(
+        events(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Accel-Buffering": "no",
+        },
+    )

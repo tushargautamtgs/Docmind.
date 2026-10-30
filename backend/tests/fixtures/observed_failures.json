@@ -1,0 +1,51 @@
+[
+  {
+    "id": "sick_balance",
+    "question": "I used 3 sick leaves this year. How many remain?",
+    "route": "remaining_balance",
+    "observed_answer": "Missing evidence: required calculation inputs could not be established.",
+    "expected": "10 - 3 = 7 days, assuming no other usage.",
+    "required_patterns": [
+      "10\\s*[\u2212-]\\s*3\\s*=\\s*7\\s+days",
+      "no other usage"
+    ],
+    "forbidden_patterns": [
+      "Missing evidence",
+      "Invalid model response"
+    ]
+  },
+  {
+    "id": "carry_forward",
+    "question": "Can I carry forward all 8 unused annual leave days?",
+    "route": "direct",
+    "observed_behavior": "Says not found, then mentions the five-day cap.",
+    "expected": "No, maximum five days; use before March 31.",
+    "required_patterns": [
+      "\\bno\\b",
+      "(?:five|5)",
+      "March\\s+31"
+    ],
+    "forbidden_patterns": [
+      "not found",
+      "sick leave",
+      "remaining 3"
+    ]
+  },
+  {
+    "id": "stolen_laptop",
+    "question": "My laptop was stolen. When will I get a replacement?",
+    "route": "direct",
+    "observed_behavior": "Replacement timeline unspecified, with unrelated finance claim-review information.",
+    "expected": "Report immediately; replacement timeline unspecified.",
+    "required_patterns": [
+      "report\\w*.*immediat|immediat.*report",
+      "(?:timeline|time).*?(?:unspecified|not specified)"
+    ],
+    "forbidden_patterns": [
+      "finance",
+      "claims?",
+      "reimbursement",
+      "seven working"
+    ]
+  }
+]
