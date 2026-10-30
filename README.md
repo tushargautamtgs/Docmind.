@@ -57,3 +57,4 @@ dependency installation could not reach `pypi.org` because DNS resolution failed
 in the setup session. Run the installation command above from a terminal with
 network access before starting the server. Live checks of `/`, `/health`, `/docs`,
 and `/openapi.json` remain pending until dependencies are installed.
+# Docmind.
