@@ -137,13 +137,13 @@ class WorkspaceStore:
                     "Another PDF is uploading. Try again shortly.",
                 )
 
-            if sum(value == owner for value in owners.values()) >= 5:
+            if sum(value == owner for value in owners.values()) >= 20:
                 raise HTTPException(
                     429,
                     "This demo allows five PDFs per browser workspace.",
                 )
 
-            if len(owners) >= 20:
+            if len(owners) >= 100:
                 raise HTTPException(
                     429,
                     "The demo document limit has been reached.",
